@@ -53,6 +53,9 @@ import type {
 	RuntimeGitSyncResponse,
 	RuntimeHookIngestRequest,
 	RuntimeHookIngestResponse,
+	RuntimeLinearCustomerLink,
+	RuntimeLinearImportIssuesRequest,
+	RuntimeLinearImportIssuesResponse,
 	RuntimeOpenFileRequest,
 	RuntimeOpenFileResponse,
 	RuntimeProjectAddRequest,
@@ -144,6 +147,15 @@ import {
 	runtimeGitSyncResponseSchema,
 	runtimeHookIngestRequestSchema,
 	runtimeHookIngestResponseSchema,
+	runtimeLinearCustomerLinkSchema,
+	runtimeLinearImportIssuesRequestSchema,
+	runtimeLinearImportIssuesResponseSchema,
+	runtimeLinearSearchCustomersRequestSchema,
+	runtimeLinearSearchCustomersResponseSchema,
+	runtimeLinearSearchIssuesRequestSchema,
+	runtimeLinearSearchIssuesResponseSchema,
+	runtimeLinearSetApiKeyRequestSchema,
+	runtimeLinearStatusResponseSchema,
 	runtimeOpenFileRequestSchema,
 	runtimeOpenFileResponseSchema,
 	runtimeProjectAddRequestSchema,
@@ -187,6 +199,7 @@ import {
 	runtimeWorktreeEnsureRequestSchema,
 	runtimeWorktreeEnsureResponseSchema,
 } from "../core/api-contract";
+import { readLinearApiKey, saveLinearApiKey, searchLinearCustomers, searchLinearIssues } from "../linear/linear-api";
 
 export interface RuntimeTrpcWorkspaceScope {
 	workspaceId: string;
@@ -340,6 +353,16 @@ export interface RuntimeTrpcContext {
 			scope: RuntimeTrpcWorkspaceScope,
 			input: RuntimeWorkspaceStateSaveRequest,
 		) => Promise<RuntimeWorkspaceStateResponse>;
+		importLinearIssues: (
+			scope: RuntimeTrpcWorkspaceScope,
+			input: RuntimeLinearImportIssuesRequest,
+		) => Promise<RuntimeLinearImportIssuesResponse>;
+		loadLinearCustomerLink: (scope: RuntimeTrpcWorkspaceScope) => Promise<RuntimeLinearCustomerLink>;
+		saveLinearCustomerLink: (
+			scope: RuntimeTrpcWorkspaceScope,
+			input: RuntimeLinearCustomerLink,
+		) => Promise<RuntimeLinearCustomerLink>;
+		syncLinearCustomerIssues: (scope: RuntimeTrpcWorkspaceScope) => Promise<RuntimeLinearImportIssuesResponse>;
 		loadWorkspaceChanges: (scope: RuntimeTrpcWorkspaceScope) => Promise<RuntimeWorkspaceChangesResponse>;
 		loadGitLog: (scope: RuntimeTrpcWorkspaceScope, input: RuntimeGitLogRequest) => Promise<RuntimeGitLogResponse>;
 		loadGitRefs: (
@@ -668,6 +691,26 @@ export const runtimeAppRouter = t.router({
 			.mutation(async ({ ctx, input }) => {
 				return await ctx.workspaceApi.saveState(ctx.workspaceScope, input);
 			}),
+		importLinearIssues: workspaceProcedure
+			.input(runtimeLinearImportIssuesRequestSchema)
+			.output(runtimeLinearImportIssuesResponseSchema)
+			.mutation(async ({ ctx, input }) => {
+				return await ctx.workspaceApi.importLinearIssues(ctx.workspaceScope, input);
+			}),
+		getLinearCustomerLink: workspaceProcedure.output(runtimeLinearCustomerLinkSchema).query(async ({ ctx }) => {
+			return await ctx.workspaceApi.loadLinearCustomerLink(ctx.workspaceScope);
+		}),
+		setLinearCustomerLink: workspaceProcedure
+			.input(runtimeLinearCustomerLinkSchema)
+			.output(runtimeLinearCustomerLinkSchema)
+			.mutation(async ({ ctx, input }) => {
+				return await ctx.workspaceApi.saveLinearCustomerLink(ctx.workspaceScope, input);
+			}),
+		syncLinearCustomerIssues: workspaceProcedure
+			.output(runtimeLinearImportIssuesResponseSchema)
+			.mutation(async ({ ctx }) => {
+				return await ctx.workspaceApi.syncLinearCustomerIssues(ctx.workspaceScope);
+			}),
 		getWorkspaceChanges: workspaceProcedure.output(runtimeWorkspaceChangesResponseSchema).query(async ({ ctx }) => {
 			return await ctx.workspaceApi.loadWorkspaceChanges(ctx.workspaceScope);
 		}),
@@ -688,6 +731,32 @@ export const runtimeAppRouter = t.router({
 			.output(runtimeGitCommitDiffResponseSchema)
 			.query(async ({ ctx, input }) => {
 				return await ctx.workspaceApi.loadCommitDiff(ctx.workspaceScope, input);
+			}),
+	}),
+	linear: t.router({
+		getStatus: t.procedure.output(runtimeLinearStatusResponseSchema).query(async () => {
+			return { hasApiKey: (await readLinearApiKey()) !== null };
+		}),
+		setApiKey: t.procedure
+			.input(runtimeLinearSetApiKeyRequestSchema)
+			.output(runtimeLinearStatusResponseSchema)
+			.mutation(async ({ input }) => {
+				await saveLinearApiKey(input.apiKey);
+				return { hasApiKey: (await readLinearApiKey()) !== null };
+			}),
+		searchCustomers: t.procedure
+			.input(runtimeLinearSearchCustomersRequestSchema)
+			.output(runtimeLinearSearchCustomersResponseSchema)
+			.query(async ({ input }) => {
+				return { customers: await searchLinearCustomers(input.query) };
+			}),
+		searchIssues: t.procedure
+			.input(runtimeLinearSearchIssuesRequestSchema)
+			.output(runtimeLinearSearchIssuesResponseSchema)
+			.query(async ({ input }) => {
+				return {
+					issues: await searchLinearIssues(input.query, { notStartedOnly: input.notStartedOnly }),
+				};
 			}),
 	}),
 	projects: t.router({

@@ -16,6 +16,8 @@ import {
 	parseWorktreeDeleteRequest,
 	parseWorktreeEnsureRequest,
 } from "../core/api-validation";
+import { readLinkedLinearCustomer, writeLinkedLinearCustomer } from "../linear/linear-customer-link";
+import { importLinearIssuesIntoWorkspace, syncLinkedLinearCustomerIssues } from "../linear/linear-import";
 import { saveWorkspaceState, WorkspaceStateConflictError } from "../state/workspace-state";
 import type { TerminalSessionManager } from "../terminal/session-manager";
 import {
@@ -385,6 +387,32 @@ export function createWorkspaceApi(deps: CreateWorkspaceApiDependencies): Runtim
 				}
 				throw error;
 			}
+		},
+		importLinearIssues: async (workspaceScope, input) => {
+			const { saved, ...result } = await importLinearIssuesIntoWorkspace(
+				workspaceScope.workspacePath,
+				input.issueIds,
+			);
+			if (saved) {
+				void deps.broadcastRuntimeWorkspaceStateUpdated(workspaceScope.workspaceId, workspaceScope.workspacePath);
+				void deps.broadcastRuntimeProjectsUpdated(workspaceScope.workspaceId);
+			}
+			return result;
+		},
+		loadLinearCustomerLink: async (workspaceScope) => {
+			return { customer: await readLinkedLinearCustomer(workspaceScope.workspacePath) };
+		},
+		saveLinearCustomerLink: async (workspaceScope, input) => {
+			await writeLinkedLinearCustomer(workspaceScope.workspacePath, input.customer);
+			return { customer: input.customer };
+		},
+		syncLinearCustomerIssues: async (workspaceScope) => {
+			const { saved, ...result } = await syncLinkedLinearCustomerIssues(workspaceScope.workspacePath);
+			if (saved) {
+				void deps.broadcastRuntimeWorkspaceStateUpdated(workspaceScope.workspaceId, workspaceScope.workspacePath);
+				void deps.broadcastRuntimeProjectsUpdated(workspaceScope.workspaceId);
+			}
+			return result;
 		},
 		loadWorkspaceChanges: async (workspaceScope) => {
 			return await getWorkspaceChanges(workspaceScope.workspacePath);

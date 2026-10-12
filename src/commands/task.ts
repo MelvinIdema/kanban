@@ -20,9 +20,11 @@ import {
 	moveTaskToColumn,
 	type RuntimeAddTaskDependencyResult,
 	removeTaskDependency,
+	resolveTaskBaseRef,
 	trashTaskAndGetReadyLinkedTaskIds,
 	updateTask,
 } from "../core/task-board-mutations";
+import { importLinearIssuesIntoWorkspace, syncLinkedLinearCustomerIssues } from "../linear/linear-import";
 import { resolveProjectInputPath } from "../projects/project-path";
 import { loadWorkspaceContext, mutateWorkspaceState } from "../state/workspace-state";
 import type { RuntimeAppRouter } from "../trpc/app-router";
@@ -317,10 +319,6 @@ async function updateRuntimeWorkspaceState<T>(
 	return mutationResponse.value;
 }
 
-function resolveTaskBaseRef(state: RuntimeWorkspaceStateResponse): string {
-	return state.git.currentBranch ?? state.git.defaultBranch ?? state.git.branches[0] ?? "";
-}
-
 function findTaskRecord(
 	state: RuntimeWorkspaceStateResponse,
 	taskId: string,
@@ -470,6 +468,38 @@ async function deleteTaskWorkspace(
 			error: toErrorMessage(error),
 		};
 	}
+}
+
+async function importLinearIssues(input: {
+	cwd: string;
+	projectPath?: string;
+	issueIds: string[];
+}): Promise<JsonRecord> {
+	const workspaceRepoPath = await resolveWorkspaceRepoPath(input.projectPath, input.cwd);
+	const workspaceId = await ensureRuntimeWorkspace(workspaceRepoPath);
+	const { saved, ...result } = await importLinearIssuesIntoWorkspace(workspaceRepoPath, input.issueIds);
+	if (saved) {
+		await notifyRuntimeWorkspaceStateUpdated(createRuntimeTrpcClient(workspaceId));
+	}
+	return {
+		ok: true,
+		workspacePath: workspaceRepoPath,
+		...result,
+	};
+}
+
+async function syncLinearCustomerIssues(input: { cwd: string; projectPath?: string }): Promise<JsonRecord> {
+	const workspaceRepoPath = await resolveWorkspaceRepoPath(input.projectPath, input.cwd);
+	const workspaceId = await ensureRuntimeWorkspace(workspaceRepoPath);
+	const { saved, ...result } = await syncLinkedLinearCustomerIssues(workspaceRepoPath);
+	if (saved) {
+		await notifyRuntimeWorkspaceStateUpdated(createRuntimeTrpcClient(workspaceId));
+	}
+	return {
+		ok: true,
+		workspacePath: workspaceRepoPath,
+		...result,
+	};
 }
 
 async function createTask(input: {
@@ -1173,6 +1203,36 @@ export function registerTaskCommand(program: Command): void {
 				);
 			},
 		);
+
+	task
+		.command("import-linear")
+		.description("Import Linear issues into backlog as linked tasks. Needs LINEAR_API_KEY or a key saved in the UI.")
+		.argument("<issues...>", "Linear issue identifiers (e.g. ENG-123) or IDs.")
+		.option("--project-path <path>", "Workspace path. Defaults to current directory workspace.")
+		.action(async (issueIds: string[], options: { projectPath?: string }) => {
+			await runTaskCommand(
+				async () =>
+					await importLinearIssues({
+						cwd: process.cwd(),
+						projectPath: options.projectPath,
+						issueIds,
+					}),
+			);
+		});
+
+	task
+		.command("sync-linear")
+		.description("Import all Backlog/Todo issues of the project's linked Linear customer (link it in the UI first).")
+		.option("--project-path <path>", "Workspace path. Defaults to current directory workspace.")
+		.action(async (options: { projectPath?: string }) => {
+			await runTaskCommand(
+				async () =>
+					await syncLinearCustomerIssues({
+						cwd: process.cwd(),
+						projectPath: options.projectPath,
+					}),
+			);
+		});
 
 	task
 		.command("update")

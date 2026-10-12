@@ -30,6 +30,7 @@ import {
 	setKanbanRuntimePort,
 	setKanbanRuntimeTls,
 } from "./core/runtime-endpoint";
+import { waitForPendingLinearSyncs } from "./linear/linear-board-sync";
 import { disablePasscode, generateInternalToken, generatePasscode } from "./security/passcode-manager";
 import { terminateProcessForTimeout } from "./server/process-termination";
 import type { RuntimeStateHub } from "./server/runtime-state-hub";
@@ -741,7 +742,7 @@ async function run(): Promise<void> {
 	const program = createProgram(argv);
 	await program.parseAsync(argv, { from: "user" });
 	if (!shouldAutoOpenBrowserTabForInvocation(argv)) {
-		await Promise.allSettled([disposeCliTelemetryService(), flushNodeTelemetry()]);
+		await Promise.allSettled([disposeCliTelemetryService(), flushNodeTelemetry(), waitForPendingLinearSyncs()]);
 		process.exit(process.exitCode ?? 0);
 	}
 }

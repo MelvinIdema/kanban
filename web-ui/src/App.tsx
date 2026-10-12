@@ -13,6 +13,7 @@ import { DebugDialog } from "@/components/debug-dialog";
 import { AgentTerminalPanel } from "@/components/detail-panels/agent-terminal-panel";
 import { GitHistoryView } from "@/components/git-history-view";
 import { KanbanBoard } from "@/components/kanban-board";
+import { LinearImportDialog } from "@/components/linear-import-dialog";
 import { ProjectNavigationPanel } from "@/components/project-navigation-panel";
 import { RuntimeSettingsDialog, type RuntimeSettingsSection } from "@/components/runtime-settings-dialog";
 import { StartupOnboardingDialog } from "@/components/startup-onboarding-dialog";
@@ -88,6 +89,16 @@ export default function App(): ReactElement {
 	const [settingsInitialSection, setSettingsInitialSection] = useState<RuntimeSettingsSection | null>(null);
 	const [homeSidebarSection, setHomeSidebarSection] = useState<"projects" | "agent">("projects");
 	const [isClearTrashDialogOpen, setIsClearTrashDialogOpen] = useState(false);
+	const [isLinearImportDialogOpen, setIsLinearImportDialogOpen] = useState(false);
+	const linkedLinearIssueIds = useMemo(
+		() =>
+			new Set(
+				board.columns.flatMap((column) =>
+					column.cards.flatMap((card) => (card.linearIssue ? [card.linearIssue.id] : [])),
+				),
+			),
+		[board],
+	);
 	const [isGitHistoryOpen, setIsGitHistoryOpen] = useState(false);
 	const [pendingTaskStartAfterEditId, setPendingTaskStartAfterEditId] = useState<string | null>(null);
 	const taskEditorResetRef = useRef<() => void>(() => {});
@@ -939,6 +950,7 @@ export default function App(): ReactElement {
 												onCreateTask={handleOpenCreateTask}
 												onStartTask={handleStartTaskFromBoard}
 												onStartAllTasks={handleStartAllBacklogTasksFromBoard}
+												onImportLinearIssues={() => setIsLinearImportDialogOpen(true)}
 												onClearTrash={handleOpenClearTrash}
 												editingTaskId={editingTaskId}
 												inlineTaskEditor={inlineTaskEditor}
@@ -1137,6 +1149,12 @@ export default function App(): ReactElement {
 					defaultProviderId={defaultTaskClineProviderId}
 					defaultModelId={runtimeProjectConfig?.clineProviderSettings?.modelId ?? null}
 					defaultReasoningEffort={runtimeProjectConfig?.clineProviderSettings?.reasoningEffort ?? null}
+				/>
+				<LinearImportDialog
+					open={isLinearImportDialogOpen}
+					onOpenChange={setIsLinearImportDialogOpen}
+					workspaceId={currentProjectId}
+					linkedIssueIds={linkedLinearIssueIds}
 				/>
 				<ClearTrashDialog
 					open={isClearTrashDialogOpen}

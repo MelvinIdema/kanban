@@ -1,5 +1,5 @@
 import { Droppable } from "@hello-pangea/dnd";
-import { Play, Plus, Trash2 } from "lucide-react";
+import { Import, Play, Plus, Trash2 } from "lucide-react";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 
 import { BoardCard } from "@/components/board-card";
@@ -15,6 +15,7 @@ export function BoardColumn({
 	onCreateTask,
 	onStartTask,
 	onStartAllTasks,
+	onImportLinearIssues,
 	onClearTrash,
 	editingTaskId,
 	inlineTaskEditor,
@@ -45,6 +46,7 @@ export function BoardColumn({
 	onCreateTask?: () => void;
 	onStartTask?: (taskId: string) => void;
 	onStartAllTasks?: () => void;
+	onImportLinearIssues?: () => void;
 	onClearTrash?: () => void;
 	editingTaskId?: string | null;
 	inlineTaskEditor?: ReactNode;
@@ -108,6 +110,17 @@ export function BoardColumn({
 						<span className="font-semibold text-sm">{column.title}</span>
 						<span className="text-text-secondary text-xs">{column.cards.length}</span>
 					</div>
+					{column.id === "backlog" && onImportLinearIssues ? (
+						<Button
+							icon={<Import size={14} />}
+							variant="ghost"
+							size="sm"
+							className="ml-auto"
+							onClick={onImportLinearIssues}
+							aria-label="Import from Linear"
+							title="Import from Linear"
+						/>
+					) : null}
 					{canStartAllTasks ? (
 						<Button
 							icon={<Play size={14} />}

@@ -3,7 +3,12 @@ import { createShortTaskId } from "@runtime-task-id";
 import * as runtimeTaskState from "@runtime-task-state";
 
 import { createInitialBoardData } from "@/data/board-data";
-import type { RuntimeAgentId, RuntimeClineReasoningEffort, RuntimeTaskClineSettings } from "@/runtime/types";
+import type {
+	RuntimeAgentId,
+	RuntimeClineReasoningEffort,
+	RuntimeLinearIssueRef,
+	RuntimeTaskClineSettings,
+} from "@/runtime/types";
 import { isAllowedCrossColumnCardMove, type ProgrammaticCardMoveInFlight } from "@/state/drag-rules";
 import {
 	type BoardCard,
@@ -143,6 +148,17 @@ function normalizeTaskClineSettings(input: {
 	};
 }
 
+function normalizeLinearIssueRef(raw: unknown): RuntimeLinearIssueRef | undefined {
+	if (!raw || typeof raw !== "object") {
+		return undefined;
+	}
+	const { id, identifier, url } = raw as { id?: unknown; identifier?: unknown; url?: unknown };
+	if (typeof id !== "string" || typeof identifier !== "string" || typeof url !== "string") {
+		return undefined;
+	}
+	return { id, identifier, url };
+}
+
 function normalizeCard(rawCard: unknown): BoardCard | null {
 	if (!rawCard || typeof rawCard !== "object") {
 		return null;
@@ -162,6 +178,7 @@ function normalizeCard(rawCard: unknown): BoardCard | null {
 		clineProviderId?: unknown;
 		clineModelId?: unknown;
 		clineReasoningEffort?: unknown;
+		linearIssue?: unknown;
 		createdAt?: unknown;
 		updatedAt?: unknown;
 	};
@@ -184,6 +201,7 @@ function normalizeCard(rawCard: unknown): BoardCard | null {
 		legacyReasoningEffort: card.clineReasoningEffort,
 	});
 
+	const linearIssue = normalizeLinearIssueRef(card.linearIssue);
 	const now = Date.now();
 
 	return {
@@ -199,6 +217,7 @@ function normalizeCard(rawCard: unknown): BoardCard | null {
 		baseRef,
 		...(typeof card.agentId === "string" && card.agentId ? { agentId: card.agentId as RuntimeAgentId } : {}),
 		...(clineSettings !== undefined ? { clineSettings } : {}),
+		...(linearIssue ? { linearIssue } : {}),
 		createdAt: typeof card.createdAt === "number" ? card.createdAt : now,
 		updatedAt: typeof card.updatedAt === "number" ? card.updatedAt : now,
 	};

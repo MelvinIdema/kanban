@@ -1,6 +1,7 @@
 import type {
 	RuntimeAgentId,
 	RuntimeBoardColumnId,
+	RuntimeLinearIssueRef,
 	RuntimeTaskAutoReviewMode,
 	RuntimeTaskClineSettings,
 	RuntimeTaskImage,
@@ -47,6 +48,7 @@ export interface BoardCard {
 	agentId?: RuntimeAgentId;
 	clineSettings?: RuntimeTaskClineSettings;
 	baseRef: string;
+	linearIssue?: RuntimeLinearIssueRef;
 	createdAt: number;
 	updatedAt: number;
 }

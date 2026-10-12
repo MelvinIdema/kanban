@@ -19,6 +19,7 @@ import {
 import { createGitProcessEnv } from "../core/git-process-env";
 import { updateTaskDependencies } from "../core/task-board-mutations";
 import { type LockRequest, lockedFileSystem } from "../fs/locked-file-system";
+import { syncLinearIssuesForBoardChange } from "../linear/linear-board-sync";
 
 const RUNTIME_HOME_PARENT_DIR = ".cline";
 const RUNTIME_HOME_DIR = "kanban";
@@ -663,6 +664,7 @@ export async function saveWorkspaceState(
 		) {
 			throw new WorkspaceStateConflictError(expectedRevision, currentMeta.revision);
 		}
+		const previousBoard = await readWorkspaceBoard(context.workspaceId);
 		const board = parsedPayload.board;
 		const sessions = parsedPayload.sessions;
 		const nextRevision = currentMeta.revision + 1;
@@ -680,6 +682,7 @@ export async function saveWorkspaceState(
 		await lockedFileSystem.writeJsonFileAtomic(metaPath, nextMeta, {
 			lock: null,
 		});
+		syncLinearIssuesForBoardChange(previousBoard, board);
 
 		return toWorkspaceStateResponse(context, board, sessions, nextRevision);
 	});
@@ -735,6 +738,7 @@ export async function mutateWorkspaceState<T>(
 		await lockedFileSystem.writeJsonFileAtomic(getWorkspaceMetaPath(context.workspaceId), nextMeta, {
 			lock: null,
 		});
+		syncLinearIssuesForBoardChange(currentBoard, nextBoard);
 
 		return {
 			value: mutation.value,

@@ -4,9 +4,11 @@ import type {
 	RuntimeBoardColumnId,
 	RuntimeBoardData,
 	RuntimeBoardDependency,
+	RuntimeLinearIssueRef,
 	RuntimeTaskAutoReviewMode,
 	RuntimeTaskClineSettings,
 	RuntimeTaskImage,
+	RuntimeWorkspaceStateResponse,
 } from "./api-contract";
 import { createUniqueTaskId } from "./task-id";
 import { resolveTaskTitle } from "./task-title";
@@ -22,6 +24,7 @@ export interface RuntimeCreateTaskInput {
 	agentId?: RuntimeAgentId;
 	clineSettings?: RuntimeTaskClineSettings;
 	baseRef: string;
+	linearIssue?: RuntimeLinearIssueRef;
 }
 
 export interface RuntimeUpdateTaskInput {
@@ -279,6 +282,10 @@ export function updateTaskDependencies(board: RuntimeBoardData): RuntimeBoardDat
 	};
 }
 
+export function resolveTaskBaseRef(state: Pick<RuntimeWorkspaceStateResponse, "git">): string {
+	return state.git.currentBranch ?? state.git.defaultBranch ?? state.git.branches[0] ?? "";
+}
+
 export function addTaskToColumn(
 	board: RuntimeBoardData,
 	columnId: RuntimeBoardColumnId,
@@ -310,6 +317,7 @@ export function addTaskToColumn(
 		...(input.agentId ? { agentId: input.agentId } : {}),
 		...(input.clineSettings !== undefined ? { clineSettings: cloneTaskClineSettings(input.clineSettings) } : {}),
 		baseRef,
+		...(input.linearIssue ? { linearIssue: { ...input.linearIssue } } : {}),
 		createdAt: now,
 		updatedAt: now,
 	};

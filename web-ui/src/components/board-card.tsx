@@ -2,7 +2,7 @@ import { Draggable } from "@hello-pangea/dnd";
 import { getRuntimeAgentCatalogEntry } from "@runtime-agent-catalog";
 import { formatClineToolCallLabel } from "@runtime-cline-tool-call-display";
 import { buildTaskWorktreeDisplayPath } from "@runtime-task-worktree-path";
-import { AlertCircle, AlertTriangle, Bot, GitBranch, Pencil, Play, RotateCcw, Trash2 } from "lucide-react";
+import { AlertCircle, AlertTriangle, Bot, GitBranch, Link2, Pencil, Play, RotateCcw, Trash2 } from "lucide-react";
 import type { KeyboardEvent, MouseEvent } from "react";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -708,6 +708,22 @@ export function BoardCard({
 											</>
 										) : null}
 									</p>
+								</div>
+							) : null}
+							{card.linearIssue ? (
+								<div className="mt-1">
+									<a
+										href={card.linearIssue.url}
+										target="_blank"
+										rel="noreferrer"
+										title={`Open ${card.linearIssue.identifier} in Linear`}
+										onMouseDown={(event) => event.stopPropagation()}
+										onClick={(event) => event.stopPropagation()}
+										className="inline-flex items-center gap-1 rounded-md border border-status-purple/30 bg-status-purple/10 px-1.5 py-0.5 text-xs text-status-purple hover:bg-status-purple/20"
+									>
+										<Link2 size={12} className="shrink-0" />
+										{card.linearIssue.identifier}
+									</a>
 								</div>
 							) : null}
 							{taskAgentSettingsLabel ? (

@@ -129,6 +129,13 @@ function normalizeRuntimeTaskClineSettings(input: {
 	};
 }
 
+export const runtimeLinearIssueRefSchema = z.object({
+	id: z.string(),
+	identifier: z.string(),
+	url: z.string(),
+});
+export type RuntimeLinearIssueRef = z.infer<typeof runtimeLinearIssueRefSchema>;
+
 export const runtimeBoardCardSchema = z
 	.object({
 		id: z.string(),
@@ -144,6 +151,7 @@ export const runtimeBoardCardSchema = z
 		clineModelId: z.string().optional(),
 		clineReasoningEffort: runtimeLegacyTaskClineReasoningEffortSchema.optional(),
 		baseRef: z.string(),
+		linearIssue: runtimeLinearIssueRefSchema.optional(),
 		createdAt: z.number(),
 		updatedAt: z.number(),
 	})
@@ -1275,3 +1283,64 @@ export const runtimeHookIngestResponseSchema = z.object({
 	error: z.string().optional(),
 });
 export type RuntimeHookIngestResponse = z.infer<typeof runtimeHookIngestResponseSchema>;
+
+export const runtimeLinearStatusResponseSchema = z.object({
+	hasApiKey: z.boolean(),
+});
+export type RuntimeLinearStatusResponse = z.infer<typeof runtimeLinearStatusResponseSchema>;
+
+export const runtimeLinearSetApiKeyRequestSchema = z.object({
+	apiKey: z.string(),
+});
+export type RuntimeLinearSetApiKeyRequest = z.infer<typeof runtimeLinearSetApiKeyRequestSchema>;
+
+export const runtimeLinearIssueSummarySchema = runtimeLinearIssueRefSchema.extend({
+	title: z.string(),
+	stateName: z.string(),
+});
+export type RuntimeLinearIssueSummary = z.infer<typeof runtimeLinearIssueSummarySchema>;
+
+export const runtimeLinearSearchIssuesRequestSchema = z.object({
+	query: z.string(),
+	/** Only issues in a Backlog or Todo (unstarted) state. Ignored for pasted identifiers. */
+	notStartedOnly: z.boolean().optional(),
+});
+export type RuntimeLinearSearchIssuesRequest = z.infer<typeof runtimeLinearSearchIssuesRequestSchema>;
+
+export const runtimeLinearSearchIssuesResponseSchema = z.object({
+	issues: z.array(runtimeLinearIssueSummarySchema),
+});
+export type RuntimeLinearSearchIssuesResponse = z.infer<typeof runtimeLinearSearchIssuesResponseSchema>;
+
+export const runtimeLinearImportIssuesRequestSchema = z.object({
+	issueIds: z.array(z.string()).min(1),
+});
+export type RuntimeLinearImportIssuesRequest = z.infer<typeof runtimeLinearImportIssuesRequestSchema>;
+
+export const runtimeLinearImportIssuesResponseSchema = z.object({
+	importedCount: z.number(),
+	skippedCount: z.number(),
+});
+export type RuntimeLinearImportIssuesResponse = z.infer<typeof runtimeLinearImportIssuesResponseSchema>;
+
+export const runtimeLinearCustomerSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+});
+export type RuntimeLinearCustomer = z.infer<typeof runtimeLinearCustomerSchema>;
+
+export const runtimeLinearSearchCustomersRequestSchema = z.object({
+	query: z.string(),
+});
+export type RuntimeLinearSearchCustomersRequest = z.infer<typeof runtimeLinearSearchCustomersRequestSchema>;
+
+export const runtimeLinearSearchCustomersResponseSchema = z.object({
+	customers: z.array(runtimeLinearCustomerSchema),
+});
+export type RuntimeLinearSearchCustomersResponse = z.infer<typeof runtimeLinearSearchCustomersResponseSchema>;
+
+/** The Linear customer a kanban project is linked to; null when unlinked. */
+export const runtimeLinearCustomerLinkSchema = z.object({
+	customer: runtimeLinearCustomerSchema.nullable(),
+});
+export type RuntimeLinearCustomerLink = z.infer<typeof runtimeLinearCustomerLinkSchema>;
