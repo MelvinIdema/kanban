@@ -10,6 +10,7 @@ import { notifyError, showAppToast } from "@/components/app-toaster";
 import { CardDetailView } from "@/components/card-detail-view";
 import { ClearTrashDialog } from "@/components/clear-trash-dialog";
 import { DebugDialog } from "@/components/debug-dialog";
+import { DeleteTaskDialog } from "@/components/delete-task-dialog";
 import { AgentTerminalPanel } from "@/components/detail-panels/agent-terminal-panel";
 import { GitHistoryView } from "@/components/git-history-view";
 import { KanbanBoard } from "@/components/kanban-board";
@@ -90,6 +91,14 @@ export default function App(): ReactElement {
 	const [homeSidebarSection, setHomeSidebarSection] = useState<"projects" | "agent">("projects");
 	const [isClearTrashDialogOpen, setIsClearTrashDialogOpen] = useState(false);
 	const [isLinearImportDialogOpen, setIsLinearImportDialogOpen] = useState(false);
+	const [pendingDeleteTaskId, setPendingDeleteTaskId] = useState<string | null>(null);
+	const pendingDeleteTask = useMemo(
+		() =>
+			pendingDeleteTaskId
+				? (board.columns.flatMap((column) => column.cards).find((card) => card.id === pendingDeleteTaskId) ?? null)
+				: null,
+		[board, pendingDeleteTaskId],
+	);
 	const linkedLinearIssueIds = useMemo(
 		() =>
 			new Set(
@@ -584,6 +593,7 @@ export default function App(): ReactElement {
 		handleCancelAutomaticTaskAction,
 		handleOpenClearTrash,
 		handleConfirmClearTrash,
+		handleDeleteBacklogTask,
 		handleAddReviewComments,
 		handleSendReviewComments,
 		moveToTrashLoadingById,
@@ -951,6 +961,7 @@ export default function App(): ReactElement {
 												onStartTask={handleStartTaskFromBoard}
 												onStartAllTasks={handleStartAllBacklogTasksFromBoard}
 												onImportLinearIssues={() => setIsLinearImportDialogOpen(true)}
+												onDeleteTask={setPendingDeleteTaskId}
 												onClearTrash={handleOpenClearTrash}
 												editingTaskId={editingTaskId}
 												inlineTaskEditor={inlineTaskEditor}
@@ -1155,6 +1166,16 @@ export default function App(): ReactElement {
 					onOpenChange={setIsLinearImportDialogOpen}
 					workspaceId={currentProjectId}
 					linkedIssueIds={linkedLinearIssueIds}
+				/>
+				<DeleteTaskDialog
+					taskTitle={pendingDeleteTask?.title ?? null}
+					onCancel={() => setPendingDeleteTaskId(null)}
+					onConfirm={() => {
+						if (pendingDeleteTaskId) {
+							handleDeleteBacklogTask(pendingDeleteTaskId);
+						}
+						setPendingDeleteTaskId(null);
+					}}
 				/>
 				<ClearTrashDialog
 					open={isClearTrashDialogOpen}

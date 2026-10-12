@@ -218,6 +218,7 @@ export function BoardCard({
 	selected = false,
 	onClick,
 	onStart,
+	onDelete,
 	onMoveToTrash,
 	onRestoreFromTrash,
 	onSaveTitle,
@@ -242,6 +243,7 @@ export function BoardCard({
 	selected?: boolean;
 	onClick?: () => void;
 	onStart?: (taskId: string) => void;
+	onDelete?: (taskId: string) => void;
 	onMoveToTrash?: (taskId: string) => void;
 	onRestoreFromTrash?: (taskId: string) => void;
 	onSaveTitle?: (taskId: string, title: string) => void;
@@ -603,17 +605,34 @@ export function BoardCard({
 									)}
 								</div>
 								{columnId === "backlog" ? (
-									<Button
-										icon={<Play size={14} />}
-										variant="ghost"
-										size="sm"
-										aria-label="Start task"
-										onMouseDown={stopEvent}
-										onClick={(event) => {
-											stopEvent(event);
-											onStart?.(card.id);
-										}}
-									/>
+									<>
+										{onDelete ? (
+											<Button
+												icon={<Trash2 size={13} />}
+												variant="ghost"
+												size="sm"
+												className="hover:text-status-red"
+												aria-label="Delete task"
+												title="Delete task"
+												onMouseDown={stopEvent}
+												onClick={(event) => {
+													stopEvent(event);
+													onDelete(card.id);
+												}}
+											/>
+										) : null}
+										<Button
+											icon={<Play size={14} />}
+											variant="ghost"
+											size="sm"
+											aria-label="Start task"
+											onMouseDown={stopEvent}
+											onClick={(event) => {
+												stopEvent(event);
+												onStart?.(card.id);
+											}}
+										/>
+									</>
 								) : columnId === "review" ? (
 									<Button
 										icon={isMoveToTrashLoading ? <Spinner size={13} /> : <Trash2 size={13} />}

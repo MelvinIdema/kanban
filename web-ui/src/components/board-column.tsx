@@ -15,6 +15,7 @@ export function BoardColumn({
 	onCreateTask,
 	onStartTask,
 	onStartAllTasks,
+	onDeleteTask,
 	onImportLinearIssues,
 	onClearTrash,
 	editingTaskId,
@@ -46,6 +47,7 @@ export function BoardColumn({
 	onCreateTask?: () => void;
 	onStartTask?: (taskId: string) => void;
 	onStartAllTasks?: () => void;
+	onDeleteTask?: (taskId: string) => void;
 	onImportLinearIssues?: () => void;
 	onClearTrash?: () => void;
 	editingTaskId?: string | null;
@@ -186,6 +188,7 @@ export function BoardColumn({
 											columnId={column.id}
 											sessionSummary={taskSessions[card.id]}
 											onStart={onStartTask}
+											onDelete={onDeleteTask}
 											onMoveToTrash={onMoveToTrashTask}
 											onRestoreFromTrash={onRestoreFromTrashTask}
 											onCommit={onCommitTask}

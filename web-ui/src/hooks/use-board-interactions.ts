@@ -16,6 +16,7 @@ import {
 	findCardSelection,
 	getTaskColumnId,
 	moveTaskToColumn,
+	removeTask,
 	updateTask,
 } from "@/state/board-state";
 import { clearTaskWorkspaceInfo, setTaskWorkspaceInfo } from "@/stores/workspace-metadata-store";
@@ -95,6 +96,7 @@ export interface UseBoardInteractionsResult {
 	handleCancelAutomaticTaskAction: (taskId: string) => void;
 	handleOpenClearTrash: () => void;
 	handleConfirmClearTrash: () => void;
+	handleDeleteBacklogTask: (taskId: string) => void;
 	handleAddReviewComments: (taskId: string, text: string) => Promise<void>;
 	handleSendReviewComments: (taskId: string, text: string) => Promise<void>;
 	moveToTrashLoadingById: Record<string, boolean>;
@@ -877,6 +879,30 @@ export function useBoardInteractions({
 		trashTaskIds,
 	]);
 
+	const handleDeleteBacklogTask = useCallback(
+		(taskId: string) => {
+			setBoard((currentBoard) => removeTask(currentBoard, taskId).board);
+			setSessions((currentSessions) => {
+				if (!(taskId in currentSessions)) {
+					return currentSessions;
+				}
+				const nextSessions = { ...currentSessions };
+				delete nextSessions[taskId];
+				return nextSessions;
+			});
+			if (selectedTaskId === taskId) {
+				setSelectedTaskId(null);
+				clearTaskWorkspaceInfo(taskId);
+			}
+			// A backlog task can still own a session or worktree if it was moved back from a later column.
+			void (async () => {
+				await stopTaskSession(taskId);
+				await cleanupTaskWorkspace(taskId);
+			})();
+		},
+		[cleanupTaskWorkspace, selectedTaskId, setBoard, setSelectedTaskId, setSessions, stopTaskSession],
+	);
+
 	const resetBoardInteractionsState = useCallback(() => {
 		previousSessionsRef.current = {};
 		moveToTrashLoadingByIdRef.current = {};
@@ -908,6 +934,7 @@ export function useBoardInteractions({
 		handleCancelAutomaticTaskAction,
 		handleOpenClearTrash,
 		handleConfirmClearTrash,
+		handleDeleteBacklogTask,
 		handleAddReviewComments,
 		handleSendReviewComments,
 		moveToTrashLoadingById,

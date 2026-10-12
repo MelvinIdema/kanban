@@ -34,6 +34,7 @@ export function KanbanBoard({
 	onCreateTask,
 	onStartTask,
 	onStartAllTasks,
+	onDeleteTask,
 	onImportLinearIssues,
 	onClearTrash,
 	editingTaskId,
@@ -62,6 +63,7 @@ export function KanbanBoard({
 	onCreateTask: () => void;
 	onStartTask?: (taskId: string) => void;
 	onStartAllTasks?: () => void;
+	onDeleteTask?: (taskId: string) => void;
 	onImportLinearIssues?: () => void;
 	onClearTrash?: () => void;
 	editingTaskId?: string | null;
@@ -391,6 +393,7 @@ export function KanbanBoard({
 						onStartTask={column.id === "backlog" ? onStartTask : undefined}
 						onStartAllTasks={column.id === "backlog" ? onStartAllTasks : undefined}
 						onImportLinearIssues={column.id === "backlog" ? onImportLinearIssues : undefined}
+						onDeleteTask={column.id === "backlog" ? onDeleteTask : undefined}
 						onClearTrash={column.id === "trash" ? onClearTrash : undefined}
 						editingTaskId={column.id === "backlog" ? editingTaskId : null}
 						inlineTaskEditor={column.id === "backlog" ? inlineTaskEditor : undefined}
